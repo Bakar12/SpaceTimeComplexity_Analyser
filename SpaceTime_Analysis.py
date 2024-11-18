@@ -17,10 +17,36 @@ def analyze_function(func, *args, repeats=5):
     return {"time": time_taken, "space": space_usage}
 
 
-def visualize_results(results, input_sizes, metric="time"):
+def calculate_theoretical_complexity(input_sizes, big_o_notation):
+    """Calculate theoretical complexity based on input sizes and Big O Notation."""
+    complexities = []
+    for size in input_sizes:
+        if big_o_notation == "O(1)":
+            complexities.append(1)
+        elif big_o_notation == "O(log n)":
+            complexities.append(np.log2(size))
+        elif big_o_notation == "O(n)":
+            complexities.append(size)
+        elif big_o_notation == "O(n log n)":
+            complexities.append(size * np.log2(size))
+        elif big_o_notation == "O(n^2)":
+            complexities.append(size**2)
+        elif big_o_notation == "O(2^n)":
+            complexities.append(2**size)
+        else:
+            complexities.append(None)  # Unknown notation
+    return complexities
+
+
+def visualize_results(results, input_sizes, metric="time", big_o_notation=None):
     """Visualize time or space complexity."""
     plt.figure(figsize=(10, 6))
-    plt.plot(input_sizes, results[metric], marker='o', label=f"{metric.capitalize()} Complexity")
+    plt.plot(input_sizes, results[metric], marker='o', label=f"Observed {metric.capitalize()} Complexity")
+    
+    if big_o_notation:
+        theoretical_complexity = calculate_theoretical_complexity(input_sizes, big_o_notation)
+        plt.plot(input_sizes, theoretical_complexity, linestyle="--", label=f"Theoretical {big_o_notation}")
+
     plt.title(f"{metric.capitalize()} Complexity Analysis")
     plt.xlabel("Input Size")
     plt.ylabel(f"{metric.capitalize()} ({'seconds' if metric == 'time' else 'bytes'})")
@@ -29,7 +55,7 @@ def visualize_results(results, input_sizes, metric="time"):
     plt.show()
 
 
-def analyze_and_plot(function_text, function_name, input_sizes, input_generator_text):
+def analyze_and_plot(function_text, function_name, input_sizes, input_generator_text, big_o_notation):
     """Analyze the function and plot results."""
     try:
         # Execute the function definition
@@ -51,8 +77,8 @@ def analyze_and_plot(function_text, function_name, input_sizes, input_generator_
             results["space"].append(complexities["space"])
         
         # Plot results
-        visualize_results(results, input_sizes, metric="time")
-        visualize_results(results, input_sizes, metric="space")
+        visualize_results(results, input_sizes, metric="time", big_o_notation=big_o_notation)
+        visualize_results(results, input_sizes, metric="space", big_o_notation=None)
     except Exception as e:
         messagebox.showerror("Error", f"An error occurred: {e}")
 
@@ -63,18 +89,19 @@ def start_analysis():
     function_name = func_name_input.get().strip()
     input_sizes = input_sizes_input.get().strip()
     input_generator_text = input_generator_input.get("1.0", tk.END).strip()
+    big_o_notation = big_o_input.get().strip()
     
-    if not function_text or not function_name or not input_sizes or not input_generator_text:
+    if not function_text or not function_name or not input_sizes or not input_generator_text or not big_o_notation:
         messagebox.showwarning("Input Error", "All fields are required!")
         return
     
-    analyze_and_plot(function_text, function_name, input_sizes, input_generator_text)
+    analyze_and_plot(function_text, function_name, input_sizes, input_generator_text, big_o_notation)
 
 
 # Tkinter GUI
 root = tk.Tk()
-root.title("Time and Space Complexity Analyzer")
-root.geometry("800x600")
+root.title("Time and Space Complexity Analyzer with Big O Notation")
+root.geometry("800x650")
 
 # Function Input
 tk.Label(root, text="Define Your Function:", font=("Arial", 12)).pack(anchor="w", padx=10, pady=5)
@@ -95,6 +122,11 @@ input_sizes_input.pack(padx=10, pady=5)
 tk.Label(root, text="Input Generator (as Python code):", font=("Arial", 12)).pack(anchor="w", padx=10, pady=5)
 input_generator_input = scrolledtext.ScrolledText(root, wrap=tk.WORD, width=70, height=4)
 input_generator_input.pack(padx=10, pady=5)
+
+# Big O Notation
+tk.Label(root, text="Expected Big O Notation (e.g., O(n), O(n^2), O(log n)):", font=("Arial", 12)).pack(anchor="w", padx=10, pady=5)
+big_o_input = tk.Entry(root, font=("Arial", 12), width=50)
+big_o_input.pack(padx=10, pady=5)
 
 # Analyze Button
 analyze_button = tk.Button(root, text="Analyze", font=("Arial", 14), command=start_analysis, bg="green", fg="white")
